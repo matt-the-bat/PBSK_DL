@@ -1,89 +1,130 @@
-"""
-    PBSK_DL by NotSoCheezyTech
-    Copyright (C) 2021  Cassandra Leo
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""
-
+#!/usr/bin/env python
+import sys
 import urllib.request
 import json
-import os
+from pathlib import Path
+from pycaption import (
+    CaptionConverter, detect_format, SAMIReader, DFXPReader,
+    WebVTTReader, SRTWriter)
+from typing import List, Dict, Tuple
 
-###### FUNCTIONS
+output_root = '/home/pi/external/westley/pbskids/'
+# output_root = Path().cwd()
 
-def yes_no(question):
-    while(True):
-        resp = input(f"{question} (y/n): ")
-        if resp == 'y': return True
-        elif resp == 'n': return False
 
-def jdownload(jcontent, collection):
-    for item in jcontent['collections'][collection]['content']:
-        print("Downloading...")
+def mapchars(x: str) -> str:
+    charmap = {'/': '; ', ': ': '_', '?': '', r'\\': '',
+               '*': '', '"': '', '<': '', '>': '', '|': '',
+               r"'\''s": r"'s"}
+    for k, v in charmap.items():
+        x = x.replace(k, v)
+    return x
+
+
+def subCheck(_i: List[Dict],
+             ccExts: Dict = {
+                 'SRT': 'srt', 'WebVTT': 'vtt',
+                 'DFXP': 'dfxp', 'Caption-SAMI': 'sami'}
+             ) -> Tuple[str, str, str]:  # url, ext, type
+    """ Captions/Subtitles Check
+        Returns EXT/subtitletype ? """
+    for cap in _i:
+        ccType = cap['format']
+        ccURL = ''
+        if 'SRT' in ccType:
+            ccURL = cap['URI']
+            break
+        elif cap['format'] in ccExts.keys():
+            ccURL = cap['URI']
+            break
+        else:
+            print(f"No subtitle found\n{cap}")
+
+    suffix: str = ccExts.get(cap['format'], '')
+    return (ccURL, suffix, ccType)
+
+
+def any2srt(cc: Tuple[str, str, str], out_title: Path):
+    """ Converts any sub to srt sub
+        cc from subCheck: d/l url, ext, type
+        https://pycaption.readthedocs.io/en/stable/introduction.html
+    """
+
+    caps = ''
+    with open(out_title.with_suffix(f'.{cc[1]}')) as fd:
+        caps = fd.read()
+
+    reader = detect_format(caps)
+    if reader:
+        with open(f"{out_title}.srt", 'w') as fe:       
+            fe.write(SRTWriter().write(reader().read(caps)))
+
+    else:
+        print('No sub type found')
+
+
+def subDownload(cc: Tuple[str, str, str], out_title: Path):
+    """ cc is (subtitle URL, suffix, type) from subCheck
+        out_title is name of file, minus suffix """
+    try:
+        sub_Path = out_title.with_suffix('.' + cc[1])
+        urllib.request.urlretrieve(cc[0], str(sub_Path))
+        if cc[1] != 'srt':
+            # Convert webvtt to srt b/c kodi19 sucks
+            any2srt(cc, out_title)
+            # TODO remove all webvtt!
+            out_title.with_suffix('.webvtt').unlink()
+
+    except Exception:
+        raise  # what to do here?
+
+
+def jdownload(jcontent: Dict):
+    print("Downloading...")
+    for item in jcontent['collections']['episodes']['content']:
         show_name = item['program']['title']
         air_date = item['air_date'][0:10]
-        ep_title = item['title'].replace('/', '; ').replace(': ', '_').replace('?', '').replace('\\', '').replace('*', '').replace('"', '').replace('<', '').replace('>', '').replace('|', '')
-        print(show_name)
-        print(air_date)
+        ep_title = mapchars(item['title'])
+        ep_title = ep_title.replace('/', '+')  # Slash be gone
         print(ep_title)
-        
-        if not os.path.isdir(show_name):
-            os.makedirs(show_name)
-            
-        if not os.path.isdir(os.path.join(show_name, collection)):
-            os.makedirs(os.path.join(show_name, collection))
-        
-        str_dir = os.path.join(show_name, collection, f"{air_date} - {ep_title}")
-        
-        print("from:")
+
+        out_dir: Path = Path(output_root, show_name)
+        out_dir.mkdir(parents=True,  exist_ok=True)
+        out_title: Path = Path(out_dir,
+                               f"{air_date} - {ep_title}")
+        out_mp4: Path = out_title.with_suffix('.mp4')
+
+        """ Save .json """
+        with open(out_title.with_suffix('.json'), 'w') as fd:
+            json.dump(jcontent, fd)
         try:
-            mp4 = item['mp4']
-            print(mp4)
-            urllib.request.urlretrieve(mp4, f"{str_dir}.mp4")
-        except:
+            mp4 = item['mp4']  # URL
+            # Prevent re-downloading existing mp4
+            if not out_mp4.is_file():
+                urllib.request.urlretrieve(mp4, f"{out_mp4}")
+        except Exception:
             print("No valid mp4!")
             raise
-        
-        try:
-            good_cc = False
-            for cap in item['closedCaptions']:
-                if cap['format'] == 'WebVTT':
-                    cc = cap['URI']
-                    good_cc = True
-                    break
-            if not good_cc: raise LookupError
-            print(cc)
-            urllib.request.urlretrieve(cc, f"{str_dir}.vtt")
-        except:
-            print("No valid vtt!")
-            raise
-        
-        print('\n')
+        # Captions/Subtitles Check
+        subDownload(subCheck(item['closedCaptions']), out_title)
 
-###### DOWNLOAD JSON
 
-print("PBSK_DL  Copyright (C) 2021  NotSoCheezyTech\nThis program comes with ABSOLUTELY NO WARRANTY; for details see license.\nThis is free software, and you are welcome to redistribute it\nunder certain conditions; see license for details.")
-print("Please type the name of the show in lowercase, replacing spaces with '-' and removing punctuation:")
-print("Examples: 'cyberchase', 'lets-go-luna'")
-show_name = input()
+def main():
+    """ Examples: 'peg-cat', 'daniel-tigers-neighborhood' """
+    try:
+        show_name = sys.argv[1]
+    except IndexError:
+        show_name = 'daniel-tigers-neighborhood'
 
-contents = urllib.request.urlopen(f"https://content.services.pbskids.org/v2/kidspbsorg/programs/{show_name}").read()
-jcontent = json.loads(contents)
+    urlroot = "https://content.services.pbskids.org/v2/kidspbsorg/programs/"
+    contents = urllib.request.urlopen(
+                                      urlroot + show_name
+                                     ).read()
+    jcontent = json.loads(contents)
+    ''' DOWNLOAD VIDEOS '''
 
-###### DOWNLOAD VIDEOS
+    jdownload(jcontent)
 
-if yes_no("Also download clips?"):
-    jdownload(jcontent, 'clips')
 
-jdownload(jcontent, 'episodes')
+if __name__ == "__main__":
+    main()
