@@ -8,8 +8,7 @@ from pycaption import (
     WebVTTReader, SRTWriter)
 from typing import List, Dict, Tuple
 
-output_root = '/home/pi/external/westley/pbskids/'
-# output_root = Path().cwd()
+output_root = Path().cwd()
 
 
 def mapchars(x: str) -> str:
@@ -56,7 +55,7 @@ def any2srt(cc: Tuple[str, str, str], out_title: Path):
 
     reader = detect_format(caps)
     if reader:
-        with open(f"{out_title}.srt", 'w') as fe:       
+        with open(f"{out_title}.srt", 'w') as fe:
             fe.write(SRTWriter().write(reader().read(caps)))
 
     else:
@@ -70,10 +69,12 @@ def subDownload(cc: Tuple[str, str, str], out_title: Path):
         sub_Path = out_title.with_suffix('.' + cc[1])
         urllib.request.urlretrieve(cc[0], str(sub_Path))
         if cc[1] != 'srt':
-            # Convert webvtt to srt b/c kodi19 sucks
+            ''' Convert webvtt to srt, because
+            Kodi 19 will crash on presence of a webvtt file
+            '''
             any2srt(cc, out_title)
             # TODO remove all webvtt!
-            out_title.with_suffix('.webvtt').unlink()
+            out_title.with_suffix(f'.{cc[1]}').unlink()
 
     except Exception:
         raise  # what to do here?
