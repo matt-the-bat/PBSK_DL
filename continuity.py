@@ -20,14 +20,14 @@ for workFile in sorted(workDir.iterdir()):
             # Broken audio stream is fast to detect
             audio_stream = ffmpeg.input(input_file).audio
             process = \
-            (
-                ffmpeg
-                .output(audio_stream,
-                        'null', f='null',c='copy')
-                .global_args('-loglevel', 'error')
-                .run(capture_stdout=False,
-                     capture_stderr=True)
-            )
+                (
+                    ffmpeg
+                    .output(audio_stream,
+                            'null', f='null', c='copy')
+                    .global_args('-loglevel', 'error')
+                    .run(capture_stdout=False,
+                         capture_stderr=True)
+                 )
             stderr_output = process[1]
             line = str(stderr_output).split(r'\r')[-1]
 
