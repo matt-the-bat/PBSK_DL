@@ -15,7 +15,7 @@ ffmpeg -v error -i filename.mp4 -vn -c copy -f null - 2>error.log
 for workFile in sorted(workDir.iterdir()):
     if '.mp4' in workFile.suffixes:
         try:
-            input_file = str(workFile)
+            input_file = str(workFile.with_suffix('.mp4'))
             rprint(workFile.name)
             # Broken audio stream is fast to detect
             audio_stream = ffmpeg.input(input_file).audio
