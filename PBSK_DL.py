@@ -3,7 +3,7 @@ import sys
 import urllib.request
 import json
 from pathlib import Path
-from pycaption import (
+from pycaption import (  # type: ignore
     CaptionConverter,
     detect_format,
     SAMIReader,
@@ -13,7 +13,7 @@ from pycaption import (
 )
 from typing import List, Dict, Tuple
 
-output_root = Path().cwd()
+output_root = Path.cwd()
 
 
 def mapchars(x: str) -> str:
@@ -41,7 +41,7 @@ def subCheck(
         "WebVTT": "vtt",
         "DFXP": "dfxp",
         "Caption-SAMI": "sami",
-    },
+                   }
 ) -> Tuple[str, str, str]:  # url, ext, type
     """Captions/Subtitles Check
     Returns EXT/subtitletype ?"""
@@ -61,7 +61,8 @@ def subCheck(
     return (ccURL, suffix, ccType)
 
 
-def any2srt(cc: Tuple[str, str, str], out_title: Path):
+def any2srt(cc: Tuple[str, str, str],
+            out_title: Path) -> None:
     """Converts any sub to srt sub
     cc from subCheck: d/l url, ext, type
     https://pycaption.readthedocs.io/en/stable/introduction.html
