@@ -126,7 +126,7 @@ def jdownload(jcontent: Dict):
         # Prevent re-downloading existing mp4
         if out_mp4.is_file():
             if not continuity.is_ok(out_mp4):
-                print('Redownloading Impartial download')
+                print('Redownloading partial download')
                 out_mp4.unlink()
                 urllib.request.urlretrieve(mp4, f"{out_mp4}")
         else:
