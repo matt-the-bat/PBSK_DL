@@ -12,8 +12,10 @@ from pycaption import (  # type: ignore
     SRTWriter,
 )
 from typing import List, Dict, Tuple
+import continuity  # type: ignore
 
 output_root = Path.cwd()
+# output_root = Path.home()
 
 
 def mapchars(x: str) -> str:
@@ -33,16 +35,17 @@ def mapchars(x: str) -> str:
         x = x.replace(k, v)
     return x
 
+# TODO rewrite as class and tuple becomes named obj variables
 
-def subCheck(
-    _i: List[Dict],
-    ccExts: Dict = {
-        "SRT": "srt",
-        "WebVTT": "vtt",
-        "DFXP": "dfxp",
-        "Caption-SAMI": "sami",
-                   }
-) -> Tuple[str, str, str]:  # url, ext, type
+
+def subCheck(_i: List[Dict],
+             ccExts: Dict = {
+                             "SRT": "srt",
+                             "WebVTT": "vtt",
+                             "DFXP": "dfxp",
+                             "Caption-SAMI": "sami",
+                             }
+             ) -> Tuple[str, str, str]:  # url, ext, type
     """Captions/Subtitles Check
     Returns EXT/subtitletype ?"""
     for cap in _i:
@@ -100,7 +103,6 @@ def subDownload(cc: Tuple[str, str, str], out_title: Path):
 
 
 def jdownload(jcontent: Dict):
-    print("Downloading...")
     for item in jcontent["collections"]["episodes"]["content"]:
         show_name = item["program"]["title"]
         air_date = item["air_date"][0:10]
@@ -118,12 +120,19 @@ def jdownload(jcontent: Dict):
             json.dump(jcontent, fd)
         try:
             mp4 = item["mp4"]  # URL
-            # Prevent re-downloading existing mp4
-            if not out_mp4.is_file():
-                urllib.request.urlretrieve(mp4, f"{out_mp4}")
         except Exception:
             print("No valid mp4!")
             raise
+        # Prevent re-downloading existing mp4
+        if out_mp4.is_file():
+            if not continuity.is_ok(out_mp4):
+                print('Redownloading Impartial download')
+                out_mp4.unlink()
+                urllib.request.urlretrieve(mp4, f"{out_mp4}")
+        else:
+            print('Downloading...')
+            urllib.request.urlretrieve(mp4, f"{out_mp4}")
+
         # Captions/Subtitles Check
         subDownload(subCheck(item["closedCaptions"]), out_title)
 
