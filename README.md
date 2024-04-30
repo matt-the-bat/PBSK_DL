@@ -2,8 +2,12 @@
 Download the freely available videos on PBSKids.org
 
 # Installation
+`ffmpeg` is required, to check for partial file downloads
+
 `pip install -r requirements.txt`
-PBS's own pycaption module is needed to convert subs to SRT format.
+
+`urllib3` for requests
+PBS's own `pycaption` module is needed to convert subs to SRT format.
 
 # Usage
 Pass the show name, as an argument. Must be lowercase, with hyphens in place of spaces.
