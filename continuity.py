@@ -49,14 +49,14 @@ if __name__ == '__main__':
     def main(path: Path =
              Path(sys.argv[1]).resolve().absolute()
              ) -> Generator:
-        print(f'{path=}')
+        # print(f'{path=}')
         if path.is_dir():
             print('Path is directory')
             paths_gen = [_ for _ in sorted(path.iterdir())
                          if _.suffix == '.mp4']
             print(f'{paths_gen}')
             for p in paths_gen:
-                print(f'{p=}')
+                # print(f'{p=}')
                 yield print(is_ok(p))
         elif path.is_file():
             yield is_ok(path)
