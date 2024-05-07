@@ -36,12 +36,16 @@ def is_ok(workPath: Path) -> str:
             return 'Fail'
 
     except ffmpeg.Error as fe:
-        stderr = fe.stderr.split(b'\n')
-        if b'Invalid data' in stderr:
+        # maybe encode the?bytes
+        stderr = fe.stderr.decode("utf-8")
+        matchobj = re.search('Invalid data', stderr)
+        if matchobj:
             return 'ffmpeg error caught'
             pass
         else:
-            return stderr
+            return str(stderr)
+    finally:
+        return 'fail'
 
 
 if __name__ == '__main__':
@@ -57,8 +61,9 @@ if __name__ == '__main__':
             print(f'{paths_gen}')
             for p in paths_gen:
                 # print(f'{p=}')
-                yield print(is_ok(p))
+                yield is_ok(p)
         elif path.is_file():
+            print('is file')
             yield is_ok(path)
         elif not path.exists():
             yield 'No such file as %s' % (path)

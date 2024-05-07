@@ -1,5 +1,5 @@
 # PBSK_DL
-Download the freely available videos on PBSKids.org
+Download the freely-available videos on PBSKids.org
 
 # Installation
 `ffmpeg` is required, to check for partial file downloads
@@ -15,5 +15,5 @@ If no argument, show defaults to daniel-tigers-neighborhood!
 
 # Changes 
 - All prompting has been removed.
-- Script now only downloads episodes, and not clips.
+- Script only downloads episodes, and not clips.
 - Downloads subtitles, ensuring SRT type is created.
