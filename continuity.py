@@ -11,9 +11,9 @@ ffmpeg -v error -i filename.mp4 -vn -c copy -f null - 2>error.log
 
 
 def is_ok(workPath: Path) -> str:
+    """ Fast detextion via broken AUDIO stream """
     input_file = str(workPath)
-    # print(f'{workPath=}')
-    # Detecting a broken AUDIO stream is fast
+    print(f'{workPath.name}')
     audio_stream = ffmpeg.input(input_file).audio
     try:
         process = \
@@ -40,15 +40,14 @@ def is_ok(workPath: Path) -> str:
         stderr = fe.stderr.decode("utf-8")
         matchobj = re.search('Invalid data', stderr)
         if matchobj:
-            return 'ffmpeg error caught'
+            return 'Fail'
             pass
         else:
-            return str(stderr)
-    finally:
-        return 'fail'
+            return 'Fail'
 
 
 if __name__ == '__main__':
+    failures: list = []
 
     def main(path: Path =
              Path(sys.argv[1]).resolve().absolute()
@@ -61,9 +60,14 @@ if __name__ == '__main__':
             print(f'{paths_gen}')
             for p in paths_gen:
                 # print(f'{p=}')
-                yield is_ok(p)
+                result = is_ok(p)
+                if result == 'Fail':
+                    failures.append(str(p))
+                yield result
+            print(failures)
+
         elif path.is_file():
-            print('is file')
+            # print('is file')
             yield is_ok(path)
         elif not path.exists():
             yield 'No such file as %s' % (path)
