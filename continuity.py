@@ -10,8 +10,12 @@ ffmpeg -v error -i filename.mp4 -vn -c copy -f null - 2>error.log
 """
 
 
-def is_ok(workPath: Path) -> str:
-    """ Fast detextion via broken AUDIO stream """
+class ffmpegError(ffmpeg.Error):
+    """ Something went wrong in ffmpeg """
+
+
+def is_ok(workPath: Path) -> bool:
+    """ Fast detection via broken AUDIO stream """
     input_file = str(workPath)
     print(f'{workPath.name}')
     audio_stream = ffmpeg.input(input_file).audio
@@ -31,19 +35,18 @@ def is_ok(workPath: Path) -> str:
         match_obj = re.search(r'partial file', line)
 
         if not match_obj:
-            return 'Pass'
+            return True
         else:
-            return 'Fail'
+            return False
 
     except ffmpeg.Error as fe:
-        # maybe encode the?bytes
         stderr = fe.stderr.decode("utf-8")
         matchobj = re.search('Invalid data', stderr)
         if matchobj:
-            return 'Fail'
+            return False
             pass
         else:
-            return 'Fail'
+            raise ffmpegError(stderr)
 
 
 if __name__ == '__main__':
@@ -61,7 +64,7 @@ if __name__ == '__main__':
             for p in paths_gen:
                 # print(f'{p=}')
                 result = is_ok(p)
-                if result == 'Fail':
+                if result is False:
                     failures.append(str(p))
                 yield result
             yield failures
@@ -70,9 +73,9 @@ if __name__ == '__main__':
             # print('is file')
             yield is_ok(path)
         elif not path.exists():
-            yield 'No such file as %s' % (path)
+            raise FileNotFoundError(f'No such file as {path.name}')
         else:
-            yield 'Else'
+            yield False
         # yield 'The LSP in my IDE made me :shrug:'
 
     for i in main():

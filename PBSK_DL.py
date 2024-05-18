@@ -12,7 +12,7 @@ from pycaption import (  # type: ignore
     SRTWriter,
 )
 from typing import List, Dict, Tuple
-import continuity  # type: ignore
+import continuity
 
 output_root = Path.cwd()
 # output_root = Path.home()
@@ -120,18 +120,22 @@ def jdownload(jcontent: Dict):
             json.dump(jcontent, fd)
         try:
             mp4 = item["mp4"]  # URL
-        except Exception:
+        except FileNotFoundError:
             print("No valid mp4!")
             raise
         # Prevent re-downloading existing mp4
         if out_mp4.is_file():
-            if continuity.is_ok(out_mp4) != 'Pass':
+            if continuity.is_ok(out_mp4) is False:
                 print('Redownloading partial download')
                 out_mp4.unlink()
                 urllib.request.urlretrieve(mp4, f"{out_mp4}")
         else:
             print('Downloading...')
             urllib.request.urlretrieve(mp4, f"{out_mp4}")
+            try:
+                continuity.is_ok(out_mp4)
+            except continuity.ffmpegError:
+                raise continuity.ffmpegError
 
         # Captions/Subtitles Check
         subDownload(subCheck(item["closedCaptions"]), out_title)
