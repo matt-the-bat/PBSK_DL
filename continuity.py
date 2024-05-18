@@ -60,14 +60,14 @@ if __name__ == '__main__':
             print('Path is directory')
             paths_gen = [_ for _ in sorted(path.iterdir())
                          if _.suffix == '.mp4']
-            # print(f'{paths_gen}')
+            print(f'{paths_gen}')
             for p in paths_gen:
                 # print(f'{p=}')
                 result = is_ok(p)
                 if result is False:
                     failures.append(str(p))
                 yield result
-            yield failures
+            print(failures)
 
         elif path.is_file():
             # print('is file')
@@ -79,6 +79,4 @@ if __name__ == '__main__':
         # yield 'The LSP in my IDE made me :shrug:'
 
     for i in main():
-        # print(i)
-        if type(i) == list:
-            print(i)
+        print(i)
