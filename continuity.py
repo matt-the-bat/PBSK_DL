@@ -10,8 +10,8 @@ ffmpeg -v error -i filename.mp4 -vn -c copy -f null - 2>error.log
 """
 
 
-class ffmpegError(ffmpeg.Error):
-    """ Something went wrong in ffmpeg """
+class ffmpegError(Exception):
+    ''' something wrong w/ ffmpeg '''
 
 
 def is_ok(workPath: Path) -> bool:
@@ -41,12 +41,9 @@ def is_ok(workPath: Path) -> bool:
 
     except ffmpeg.Error as fe:
         stderr = fe.stderr.decode("utf-8")
-        matchobj = re.search('Invalid data', stderr)
-        if matchobj:
-            return False
-            pass
-        else:
-            raise ffmpegError(stderr)
+        print(stderr)
+        return False
+        pass
 
 
 if __name__ == '__main__':
