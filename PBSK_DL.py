@@ -60,11 +60,10 @@ def subCheck(_i: List[Dict],
         if "SRT" in cc_type:
             cc_URL = cap["URI"]
             break
-        elif cap["format"] in cc_Exts.keys():
+        if cap["format"] in cc_Exts.keys():
             cc_URL = cap["URI"]
             break
-        else:
-            print(f"No subtitle found\n{cap}")
+        print(f"No subtitle found\n{cap}")
 
     suffix: str = cc_Exts.get(cap["format"], "")
     return (cc_URL, suffix, cc_type)
@@ -154,10 +153,13 @@ def main():
         show_name = sys.argv[1]
     except IndexError:
         show_name = "jelly-ben-pogo"
-
+    # Retrieve show information
     urlroot = "https://content.services.pbskids.org/v2/kidspbsorg/programs/"
-    contents = urllib.request.urlopen(urlroot + show_name).read()
+    with urllib.request.urlopen(urlroot + show_name) as proc:
+        contents = proc.read()
     jcontent = json.loads(contents)
+
+    
     ### DOWNLOAD VIDEOS ###
     jdownload(jcontent)
 
