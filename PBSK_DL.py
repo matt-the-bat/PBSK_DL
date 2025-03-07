@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+"""Examples: 'peg-cat', 'daniel-tigers-neighborhood'"""
 import sys
 import urllib.request
 import json
@@ -12,6 +13,7 @@ from pycaption import (  # type: ignore
     SRTWriter,
 )
 from typing import List, Dict, Tuple
+
 import continuity
 
 output_root = Path.cwd()
@@ -19,6 +21,7 @@ output_root = Path.cwd()
 
 
 def mapchars(x: str) -> str:
+    ''' Map of characters to replace file names with '''
     charmap = {
         "/": "; ",
         ": ": "_",
@@ -35,33 +38,36 @@ def mapchars(x: str) -> str:
         x = x.replace(k, v)
     return x
 
-# TODO rewrite as class and tuple becomes named obj variables
+# TODO: rewrite as class and tuple becomes named obj variables
 
 
 def subCheck(_i: List[Dict],
-             ccExts: Dict = {
-                             "SRT": "srt",
-                             "WebVTT": "vtt",
-                             "DFXP": "dfxp",
-                             "Caption-SAMI": "sami",
-                             }
+             cc_Exts=None,
              ) -> Tuple[str, str, str]:  # url, ext, type
     """Captions/Subtitles Check
-    Returns EXT/subtitletype ?"""
+    TODO: Returns EXT/subtitletype ?"""
+    if cc_Exts is None:
+        cc_Exts = {
+            "SRT": "srt",
+            "WebVTT": "vtt",
+            "DFXP": "dfxp",
+            "Caption-SAMI": "sami",
+        }
+
     for cap in _i:
-        ccType = cap["format"]
-        ccURL = ""
-        if "SRT" in ccType:
-            ccURL = cap["URI"]
+        cc_type = cap["format"]
+        cc_URL = ""
+        if "SRT" in cc_type:
+            cc_URL = cap["URI"]
             break
-        elif cap["format"] in ccExts.keys():
-            ccURL = cap["URI"]
+        elif cap["format"] in cc_Exts.keys():
+            cc_URL = cap["URI"]
             break
         else:
             print(f"No subtitle found\n{cap}")
 
-    suffix: str = ccExts.get(cap["format"], "")
-    return (ccURL, suffix, ccType)
+    suffix: str = cc_Exts.get(cap["format"], "")
+    return (cc_URL, suffix, cc_type)
 
 
 def any2srt(cc: Tuple[str, str, str],
@@ -91,14 +97,14 @@ def subDownload(cc: Tuple[str, str, str], out_title: Path):
         sub_Path = out_title.with_suffix("." + cc[1])
         urllib.request.urlretrieve(cc[0], str(sub_Path))
         if cc[1] != "srt":
-            """Convert webvtt to srt, because
-            Kodi 19 will crash on presence of a webvtt file
-            """
+            # Convert webvtt to srt, because
+            # Kodi 19 will crash on presence of a webvtt file
             any2srt(cc, out_title)
             # TODO remove all webvtt!
             out_title.with_suffix(f".{cc[1]}").unlink()
 
     except Exception:
+        print('What')
         raise  # what to do here?
 
 
@@ -115,7 +121,7 @@ def jdownload(jcontent: Dict):
         out_title: Path = Path(out_dir, f"{air_date} - {ep_title}")
         out_mp4: Path = out_title.with_suffix(".mp4")
 
-        """ Save .json """
+        # Save .json
         with open(out_title.with_suffix(".json"), "w") as fd:
             json.dump(jcontent, fd)
         try:
@@ -134,11 +140,12 @@ def jdownload(jcontent: Dict):
             urllib.request.urlretrieve(mp4, f"{out_mp4}")
             try:
                 continuity.is_ok(out_mp4)
-            except continuity.ffmpegError:
-                raise continuity.ffmpegError
+            except continuity.FfmpegError as exc:
+                raise continuity.FfmpegError from exc
 
         # Captions/Subtitles Check
-        subDownload(subCheck(item["closedCaptions"]), out_title)
+        sub_check_obj = subCheck(item["closedCaptions"])
+        subDownload(sub_check_obj, out_title)
 
 
 def main():
@@ -146,13 +153,12 @@ def main():
     try:
         show_name = sys.argv[1]
     except IndexError:
-        show_name = "daniel-tigers-neighborhood"
+        show_name = "jelly-ben-pogo"
 
     urlroot = "https://content.services.pbskids.org/v2/kidspbsorg/programs/"
     contents = urllib.request.urlopen(urlroot + show_name).read()
     jcontent = json.loads(contents)
-    """ DOWNLOAD VIDEOS """
-
+    ### DOWNLOAD VIDEOS ###
     jdownload(jcontent)
 
 
