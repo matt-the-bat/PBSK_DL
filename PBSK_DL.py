@@ -4,6 +4,7 @@ import sys
 import urllib.request
 import json
 from pathlib import Path
+from typing import List, Dict, Tuple
 from pycaption import (  # type: ignore
     CaptionConverter,
     detect_format,
@@ -12,7 +13,7 @@ from pycaption import (  # type: ignore
     WebVTTReader,
     SRTWriter,
 )
-from typing import List, Dict, Tuple
+
 
 import continuity
 
@@ -20,7 +21,7 @@ output_root = Path.cwd()
 # output_root = Path.home()
 
 
-def mapchars(x: str) -> str:
+def mapchars(_x: str) -> str:
     ''' Map of characters to replace file names with '''
     charmap = {
         "/": "; ",
@@ -34,20 +35,20 @@ def mapchars(x: str) -> str:
         "|": "",
         r"'\''s": r"'s",
     }
-    for k, v in charmap.items():
-        x = x.replace(k, v)
-    return x
+    for _k, _v in charmap.items():
+        _x = _x.replace(_k, _v)
+    return _x
 
 # TODO: rewrite as class and tuple becomes named obj variables
 
 
-def subCheck(_i: List[Dict],
-             cc_Exts=None,
+def sub_check(_i: List[Dict],
+             cc_exts=None,
              ) -> Tuple[str, str, str]:  # url, ext, type
     """Captions/Subtitles Check
     TODO: Returns EXT/subtitletype ?"""
-    if cc_Exts is None:
-        cc_Exts = {
+    if cc_exts is None:
+        cc_exts = {
             "SRT": "srt",
             "WebVTT": "vtt",
             "DFXP": "dfxp",
@@ -56,51 +57,55 @@ def subCheck(_i: List[Dict],
 
     for cap in _i:
         cc_type = cap["format"]
-        cc_URL = ""
+        cc_url = ""
         if "SRT" in cc_type:
-            cc_URL = cap["URI"]
+            cc_url = cap["URI"]
             break
-        if cap["format"] in cc_Exts.keys():
-            cc_URL = cap["URI"]
+        if cap["format"] in cc_exts.keys():
+            cc_url = cap["URI"]
             break
         print(f"No subtitle found\n{cap}")
+        cap = None
 
-    suffix: str = cc_Exts.get(cap["format"], "")
-    return (cc_URL, suffix, cc_type)
+    if cap:
+        suffix: str = cc_exts.get(cap["format"], "")
+    else:
+        suffix == ''
+    return (cc_url, suffix, cc_type)
 
 
-def any2srt(cc: Tuple[str, str, str],
+def any2srt(_cc: Tuple[str, str, str],
             out_title: Path) -> None:
     """Converts any sub to srt sub
-    cc from subCheck: d/l url, ext, type
+    cc from sub_check: d/l url, ext, type
     https://pycaption.readthedocs.io/en/stable/introduction.html
     """
 
     caps = ""
-    with open(out_title.with_suffix(f".{cc[1]}")) as fd:
-        caps = fd.read()
+    with open(out_title.with_suffix(f".{_cc[1]}")) as _fd:
+        caps = _fd.read()
 
     reader = detect_format(caps)
     if reader:
-        with open(f"{out_title}.srt", "w") as fe:
-            fe.write(SRTWriter().write(reader().read(caps)))
+        with open(f"{out_title}.srt", "w") as _fe:
+            _fe.write(SRTWriter().write(reader().read(caps)))
 
     else:
         print("No sub type found")
 
 
-def subDownload(cc: Tuple[str, str, str], out_title: Path):
-    """cc is (subtitle URL, suffix, type) from subCheck
+def sub_download(_cc: Tuple[str, str, str], out_title: Path):
+    """_cc is (subtitle URL, suffix, type) from sub_check
     out_title is name of file, minus suffix"""
     try:
-        sub_Path = out_title.with_suffix("." + cc[1])
-        urllib.request.urlretrieve(cc[0], str(sub_Path))
-        if cc[1] != "srt":
+        sub_path = out_title.with_suffix("." + _cc[1])
+        urllib.request.urlretrieve(_cc[0], str(sub_path))
+        if _cc[1] != "srt":
             # Convert webvtt to srt, because
             # Kodi 19 will crash on presence of a webvtt file
-            any2srt(cc, out_title)
+            any2srt(_cc, out_title)
             # TODO remove all webvtt!
-            out_title.with_suffix(f".{cc[1]}").unlink()
+            out_title.with_suffix(f".{_cc[1]}").unlink()
 
     except Exception:
         print('What')
@@ -108,6 +113,7 @@ def subDownload(cc: Tuple[str, str, str], out_title: Path):
 
 
 def jdownload(jcontent: Dict):
+    ''' Download using json file contents '''
     for item in jcontent["collections"]["episodes"]["content"]:
         show_name = item["program"]["title"]
         air_date = item["air_date"][0:10]
@@ -121,8 +127,8 @@ def jdownload(jcontent: Dict):
         out_mp4: Path = out_title.with_suffix(".mp4")
 
         # Save .json
-        with open(out_title.with_suffix(".json"), "w") as fd:
-            json.dump(jcontent, fd)
+        with open(out_title.with_suffix(".json"), "w") as _fd:
+            json.dump(jcontent, _fd)
         try:
             mp4 = item["mp4"]  # URL
         except FileNotFoundError:
@@ -143,8 +149,8 @@ def jdownload(jcontent: Dict):
                 raise continuity.FfmpegError from exc
 
         # Captions/Subtitles Check
-        sub_check_obj = subCheck(item["closedCaptions"])
-        subDownload(sub_check_obj, out_title)
+        sub_check_obj = sub_check(item["closedCaptions"])
+        sub_download(sub_check_obj, out_title)
 
 
 def main():
@@ -159,7 +165,6 @@ def main():
         contents = proc.read()
     jcontent = json.loads(contents)
 
-    
     ### DOWNLOAD VIDEOS ###
     jdownload(jcontent)
 
