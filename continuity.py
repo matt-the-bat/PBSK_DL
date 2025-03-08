@@ -7,15 +7,10 @@ from typing import Generator
 
 # ffmpeg -v error -i filename.mp4 -vn -c copy -f null - 2>error.log
 
-<<<<<<< HEAD
-class ffmpegError(Exception):
-    ''' something wrong w/ ffmpeg '''
-=======
 class FfmpegError(BaseException):
     ''' Error Class pbsk_dl expects '''
     def __init__(self):
         pass
->>>>>>> main
 
 def is_ok(work_path: Path) -> bool:
     """ Fast detection via broken AUDIO stream """
@@ -40,15 +35,7 @@ def is_ok(work_path: Path) -> bool:
                 print(stderr_output)
                 return False
 
-<<<<<<< HEAD
-    except ffmpeg.Error as fe:
-        stderr = fe.stderr.decode("utf-8")
-        print(stderr)
-        return False
-        pass
-=======
         return True
->>>>>>> main
 
 
 if __name__ == '__main__':
