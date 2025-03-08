@@ -69,8 +69,7 @@ def sub_check(_i: List[Dict],
 
     if cap:
         suffix: str = cc_exts.get(cap["format"], "")
-    else:
-        suffix == ''
+
     return (cc_url, suffix, cc_type)
 
 
