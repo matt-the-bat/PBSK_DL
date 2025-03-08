@@ -43,8 +43,6 @@ def mapchars(_x: str) -> str:
         _x = _x.replace(_k, _v)
     return _x
 
-<<<<<<< HEAD
-
 # TODO rewrite as class and tuple becomes named obj variables
 
 
@@ -57,14 +55,6 @@ def subCheck(
         "Caption-SAMI": "sami",
     },
 ) -> Tuple[str, str, str]:  # url, ext, type
-=======
-# TODO: rewrite as class and tuple becomes named obj variables
-
-
-def sub_check(_i: List[Dict],
-             cc_exts=None,
-             ) -> Tuple[str, str, str]:  # url, ext, type
->>>>>>> main
     """Captions/Subtitles Check
     TODO: Returns EXT/subtitletype ?"""
     if cc_exts is None:
@@ -93,12 +83,8 @@ def sub_check(_i: List[Dict],
     return (cc_url, suffix, cc_type)
 
 
-<<<<<<< HEAD
-def any2srt(cc: Tuple[str, str, str], out_title: Path) -> None:
-=======
 def any2srt(_cc: Tuple[str, str, str],
             out_title: Path) -> None:
->>>>>>> main
     """Converts any sub to srt sub
     cc from sub_check: d/l url, ext, type
     https://pycaption.readthedocs.io/en/stable/introduction.html
@@ -135,7 +121,6 @@ def sub_download(_cc: Tuple[str, str, str], out_title: Path):
         raise  # what to do here?
 
 
-<<<<<<< HEAD
 def download_file(url, filename, rate_limit=2048):
     """rate_limit in kilobytes"""
     start_time = time.time()
@@ -172,10 +157,7 @@ def download_file(url, filename, rate_limit=2048):
 
 
 def iter_episodes(jcontent: Dict):
-=======
-def jdownload(jcontent: Dict):
     ''' Download using json file contents '''
->>>>>>> main
     for item in jcontent["collections"]["episodes"]["content"]:
         show_name = item["program"]["title"]
         air_date = item["air_date"][0:10]
@@ -223,10 +205,8 @@ def jdownload(jcontent: Dict):
 
 
 def main():
-<<<<<<< HEAD
     urlroot = "https://content.services.pbskids.org/v2/kidspbsorg/programs/"
     contents = urllib.request.urlopen(urlroot + args.show).read()
-=======
     """Examples: 'peg-cat', 'daniel-tigers-neighborhood'"""
     try:
         show_name = sys.argv[1]
@@ -236,15 +216,7 @@ def main():
     urlroot = "https://content.services.pbskids.org/v2/kidspbsorg/programs/"
     with urllib.request.urlopen(urlroot + show_name) as proc:
         contents = proc.read()
->>>>>>> main
-    jcontent = json.loads(contents)
-
-<<<<<<< HEAD
     iter_episodes(jcontent)
-=======
-    ### DOWNLOAD VIDEOS ###
-    jdownload(jcontent)
->>>>>>> main
 
 
 if __name__ == "__main__":
@@ -262,8 +234,8 @@ if __name__ == "__main__":
         "--rate-limit",
         required=False,
         type=int,
-        default=1024 * 1024,
-        help="Rate limit in bytes per second (default: 1 MB/s)",
+        default=10 * 1024 * 1024,
+        help="Rate limit in bytes per second (default: 10 MB/s)",
     )
     args = parser.parse_args()
 
