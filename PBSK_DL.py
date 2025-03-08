@@ -46,9 +46,9 @@ def mapchars(_x: str) -> str:
 # TODO rewrite as class and tuple becomes named obj variables
 
 
-def subCheck(
+def sub_check(
     _i: List[Dict],
-    ccExts: Dict = {
+    cc_exts: Dict = {
         "SRT": "srt",
         "WebVTT": "vtt",
         "DFXP": "dfxp",
@@ -131,7 +131,7 @@ def download_file(url, filename, rate_limit=2048):
 
         with open(filename, "wb") as file:
             while True:
-                chunk = response.read(1024)
+                chunk = response.read(1024 * 1024)
                 if not chunk:
                     break
                 file.write(chunk)
@@ -179,7 +179,7 @@ def iter_episodes(jcontent: Dict):
             req = urllib.request.Request(mp4)
             with urllib.request.urlopen(req) as response:
                 print(response.headers["Content-Length"])
-            break
+            #break
             # END RESPONSE TESTING
         except FileNotFoundError:
             print("No valid mp4!")
@@ -204,19 +204,14 @@ def iter_episodes(jcontent: Dict):
         sub_download(sub_check_obj, out_title)
 
 
-def main():
-    urlroot = "https://content.services.pbskids.org/v2/kidspbsorg/programs/"
-    contents = urllib.request.urlopen(urlroot + args.show).read()
+def main(show):
     """Examples: 'peg-cat', 'daniel-tigers-neighborhood'"""
-    try:
-        show_name = sys.argv[1]
-    except IndexError:
-        show_name = "jelly-ben-pogo"
     # Retrieve show information
     urlroot = "https://content.services.pbskids.org/v2/kidspbsorg/programs/"
-    with urllib.request.urlopen(urlroot + show_name) as proc:
-        contents = proc.read()
-    iter_episodes(jcontent)
+    with urllib.request.urlopen(urlroot + show,
+                                ) as proc:
+        contents = json.loads(proc.read())
+    iter_episodes(contents)
 
 
 if __name__ == "__main__":
@@ -238,5 +233,4 @@ if __name__ == "__main__":
         help="Rate limit in bytes per second (default: 10 MB/s)",
     )
     args = parser.parse_args()
-
-    main()
+    main(args.show)
