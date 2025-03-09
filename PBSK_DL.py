@@ -5,6 +5,8 @@ import urllib.request
 import json
 from pathlib import Path
 from typing import List, Dict, Tuple
+import time
+import argparse
 from pycaption import (  # type: ignore
     CaptionConverter,
     detect_format,
@@ -14,12 +16,7 @@ from pycaption import (  # type: ignore
     SRTWriter,
 )
 
-
 import continuity
-import time
-import argparse
-from rich import print as print
-
 
 output_root = Path.cwd()
 # output_root = Path.home()
@@ -121,8 +118,10 @@ def sub_download(_cc: Tuple[str, str, str], out_title: Path):
         raise  # what to do here?
 
 
-def download_file(url, filename, rate_limit=2048):
+def download_file(url, length, filename, rate_limit=2048):
     """rate_limit in kilobytes"""
+    if length == None:
+        length == 0
     start_time = time.time()
     rate_limit = rate_limit * 1024
     req = urllib.request.Request(url)
@@ -146,8 +145,9 @@ def download_file(url, filename, rate_limit=2048):
                     start_time = time.time()
 
                 # Update the progress bar
-                progress_bar = "\rDownloaded: {:.2f} MB".format(
-                    downloaded / (1024 * 1024)
+                progress_bar = "\rDownloaded: {:.2f} MB of {:.2f}".format(
+                    downloaded / (1024 * 1024),
+                    int(length)
                 )
                 sys.stdout.write(progress_bar)
                 sys.stdout.flush()
@@ -178,7 +178,7 @@ def iter_episodes(jcontent: Dict):
             # RESPONSE TESTING FOR CONTENTLENGTH
             req = urllib.request.Request(mp4)
             with urllib.request.urlopen(req) as response:
-                print(response.headers["Content-Length"])
+                content_length = response.headers["Content-Length"]
             #break
             # END RESPONSE TESTING
         except FileNotFoundError:
@@ -189,11 +189,11 @@ def iter_episodes(jcontent: Dict):
             if continuity.is_ok(out_mp4) is False:
                 print("Redownloading partial download")
                 out_mp4.unlink()
-                download_file(mp4, f"{out_mp4}")
+                download_file(mp4, content_length, f"{out_mp4}")
         else:
             print("Downloading...")
 
-            download_file(mp4, f"{out_mp4}")
+            download_file(mp4, content_length, f"{out_mp4}")
             try:
                 continuity.is_ok(out_mp4)
             except continuity.FfmpegError as exc:
