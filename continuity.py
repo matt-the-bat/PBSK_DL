@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" Maintain integrity of downloaded files """
+""" Check integrity of downloaded files """
 from pathlib import Path
 import sys
 import subprocess
