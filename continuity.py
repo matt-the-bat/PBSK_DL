@@ -41,18 +41,13 @@ def is_ok(work_path: Path) -> bool:
 if __name__ == '__main__':
     results = {}
 
-    PATH_SOURCE = sys.argv[1]
-
-    def main(path: Path =
-             Path(PATH_SOURCE).resolve().absolute()
-             ) -> Generator:
+    def main(path: Path) -> Generator:
         """ Main loop when called by console """
         # print(f'{path=}')
         if path.is_dir():
-            print('Path is directory')
             paths_gen = [_ for _ in sorted(path.iterdir())
-                         if _.suffix == '.mp4']
-            print(f'{paths_gen}')
+                         if _.suffix in ['.mp4', '.mpg', '.avi']]
+            #print(f'{paths_gen}')
             for _p in paths_gen:
                 # print(f'{_p=}')
                 yield _p, is_ok(_p)
@@ -63,6 +58,9 @@ if __name__ == '__main__':
         else:
             yield path, False
 
-    for inp_path, result in main():
-        results[str(inp_path)] = result
-    print(results)
+    for _arg in sys.argv[1:]:
+        _arg = Path(_arg).resolve().absolute()
+        for inp_path, result in main(_arg):
+            results[str(inp_path)] = result
+    for _k, _v in results.items():
+        print(f'{_k}: {_v}')
