@@ -32,14 +32,14 @@ def is_ok(work_path: Path) -> bool:
         if process.stderr:
             stderr_output = process.stderr.read().decode('utf-8')
             if stderr_output != '':
-                print(stderr_output)
+                #print(stderr_output)
                 return False
 
         return True
 
 
 if __name__ == '__main__':
-    failures: list = []
+    results = {}
 
     PATH_SOURCE = sys.argv[1]
 
@@ -55,18 +55,14 @@ if __name__ == '__main__':
             print(f'{paths_gen}')
             for _p in paths_gen:
                 # print(f'{_p=}')
-                result = is_ok(_p)
-                if result is False:
-                    failures.append(str(_p))
-                yield result
-            print(failures)
+                yield _p, is_ok(_p)
 
         elif path.is_file():
             # print('is file')
-            yield is_ok(path)
+            yield path, is_ok(path)
         else:
-            yield False
-        # yield 'The LSP in my IDE made me :shrug:'
+            yield path, False
 
-    for i in main():
-        print(i)
+    for inp_path, result in main():
+        results[str(inp_path)] = result
+    print(results)
