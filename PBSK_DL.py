@@ -17,6 +17,8 @@ from pycaption import (  # type: ignore
 )
 
 import continuity
+import find_shows
+
 
 output_root = Path.cwd()
 # output_root = Path.home()
@@ -44,6 +46,7 @@ def mapchars(_x: str) -> str:
 class Subtitle:
     """ Contains cc_ url, ext, and type variables
         for handling subs"""
+
     def __init__(self, cc_avail):
         """ Examines a list of caption dictionaries,
         and assigns to the instance variables:
@@ -112,7 +115,7 @@ class Subtitle:
         https://pycaption.readthedocs.io/en/stable/introduction.html """
 
         caps = ""
-        with open(out_title.with_suffix(f".{self.cc_ext}"), 
+        with open(out_title.with_suffix(f".{self.cc_ext}"),
                   encoding="utf-8") as _fd:
             caps = _fd.read()
 
@@ -244,7 +247,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "show",
-        default="jelly-ben-pogo",
+        # default="jelly-ben-pogo",
         nargs="?",
         help="show name. default daniel-tigers-neighborhood",
     )
@@ -256,5 +259,11 @@ if __name__ == "__main__":
         default=10 * 1024 * 1024,
         help="Rate limit in bytes per second (default: 10 MB/s)",
     )
+
     args = parser.parse_args()
-    main(args.show)
+
+    if not args.show:
+        print('Pick one of these shows:')
+        find_shows.run()
+    else:
+        main(args.show)
