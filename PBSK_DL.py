@@ -4,7 +4,7 @@ import sys
 import urllib.request
 import json
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import time
 import argparse
 from pycaption import (  # type: ignore
@@ -40,21 +40,34 @@ def mapchars(_x: str) -> str:
         _x = _x.replace(_k, _v)
     return _x
 
-# TODO rewrite as class and tuple becomes named obj variables
 
+class Subtitle:
+    """ Contains cc_ url, ext, and type variables
+        for handling subs"""
+    def __init__(self, cc_avail):
+        """ Examines a list of caption dictionaries,
+        and assigns to the instance variables:
+        - cc_url: the subtitle URL,
+        - cc_ext: the file extension,
+        - cc_type: the caption type (format).
 
-def sub_check(
-    _i: List[Dict],
-    cc_exts: Dict = {
-        "SRT": "srt",
-        "WebVTT": "vtt",
-        "DFXP": "dfxp",
-        "Caption-SAMI": "sami",
-    },
-) -> Tuple[str, str, str]:  # url, ext, type
-    """Captions/Subtitles Check
-    TODO: Returns EXT/subtitletype ?"""
-    if cc_exts is None:
+        The method prioritizes "SRT" and checks against a
+        predefined set of supported formats.
+
+        Args:
+            captions (List[Dict]): List of caption dictionaries.
+                                    Each dictionary should have at
+                                    least the keys 'format' and 'URI'.
+        """
+        self.cc_avail = cc_avail
+        self.cc_url = ''
+        self.cc_ext = ''
+        self.cc_type = ''
+
+        self.sub_check(cc_avail)
+
+    def sub_check(self, cc_avail: List[Dict]):
+        """Captions/Subtitles Check """
         cc_exts = {
             "SRT": "srt",
             "WebVTT": "vtt",
@@ -62,66 +75,74 @@ def sub_check(
             "Caption-SAMI": "sami",
         }
 
-    for cap in _i:
-        cc_type = cap["format"]
-        cc_url = ""
-        if "SRT" in cc_type:
-            cc_url = cap["URI"]
-            break
-        if cap["format"] in cc_exts.keys():
-            cc_url = cap["URI"]
-            break
-        print(f"No subtitle found\n{cap}")
-        cap = None
+        if cc_avail is None:
+            cc_avail = self.cc_avail
 
-    if cap:
-        suffix: str = cc_exts.get(cap["format"], "")
-    else:
-        suffix == ''
-    return (cc_url, suffix, cc_type)
+        chosen_cap = None
 
+        # First pass: try to locate an SRT caption.
+        for cap in cc_avail:
+            current_format = cap.get("format", "")
+            if "SRT" in current_format:
+                self.cc_type = current_format
+                self.cc_url = cap.get("URI", "")
+                chosen_cap = cap
+                break  # Stop at the first SRT found
 
-def any2srt(_cc: Tuple[str, str, str],
-            out_title: Path) -> None:
-    """Converts any sub to srt sub
-    cc from sub_check: d/l url, ext, type
-    https://pycaption.readthedocs.io/en/stable/introduction.html
-    """
+        # If no SRT was found, look for any supported caption format.
+        if not chosen_cap:
+            for cap in cc_avail:
+                current_format = cap.get("format", "")
+                if current_format in cc_exts:
+                    self.cc_type = current_format
+                    self.cc_url = cap.get("URI", "")
+                    chosen_cap = cap
+                    break
+                else:
+                    print(f"No supported subtitle: {cap}")
 
-    caps = ""
-    with open(out_title.with_suffix(f".{_cc[1]}")) as _fd:
-        caps = _fd.read()
+        # Set the file extension based on the chosen caption format.
+        if chosen_cap:
+            self.cc_ext = cc_exts.get(self.cc_type, "")
+        else:
+            self.cc_ext = ''
 
-    reader = detect_format(caps)
-    if reader:
-        with open(f"{out_title}.srt", "w") as _fe:
-            _fe.write(SRTWriter().write(reader().read(caps)))
+    def any2srt(self, out_title: Path) -> None:
+        """Converts any subtitle to srt.
+        https://pycaption.readthedocs.io/en/stable/introduction.html """
 
-    else:
-        print("No sub type found")
+        caps = ""
+        with open(out_title.with_suffix(f".{self.cc_ext}")) as _fd:
+            caps = _fd.read()
 
+        reader = detect_format(caps)
+        if reader:
+            with open(f"{out_title}.srt", "w") as _fe:
+                _fe.write(SRTWriter().write(reader().read(caps)))
 
-def sub_download(_cc: Tuple[str, str, str], out_title: Path):
-    """_cc is (subtitle URL, suffix, type) from sub_check
-    out_title is name of file, minus suffix"""
-    try:
-        sub_path = out_title.with_suffix("." + _cc[1])
-        urllib.request.urlretrieve(_cc[0], str(sub_path))
-        if _cc[1] != "srt":
-            # Convert webvtt to srt, because
-            # Kodi 19 will crash on presence of a webvtt file
-            any2srt(_cc, out_title)
-            # TODO remove all webvtt!
-            out_title.with_suffix(f".{_cc[1]}").unlink()
+        else:
+            print("No sub type found")
 
-    except Exception:
-        print('What')
-        raise  # what to do here?
+    def sub_download(self, out_title: Path):
+        """out_title is name of file, minus suffix"""
+        try:
+            sub_path = out_title.with_suffix("." + self.cc_ext)
+            urllib.request.urlretrieve(self.cc_url, str(sub_path))
+            if self.cc_ext != "srt":
+                # Convert webvtt to srt, because
+                # Kodi 19 will crash on presence of a webvtt file
+                self.any2srt(out_title)
+                # TODO remove all webvtt!
+                out_title.with_suffix(f".{self.cc_ext}").unlink()
+
+        except Exception:
+            print('What')
+            raise  # what to do here?
 
 
 def download_file(url, length, filename, rate_limit=2048):
     """rate_limit in kilobytes"""
-    if length == None:
+    if length is None:
         length == 0
     start_time = time.time()
     rate_limit = rate_limit * 1024
@@ -141,14 +162,14 @@ def download_file(url, length, filename, rate_limit=2048):
                     current_rate = downloaded / elapsed_time / 1024
                     if current_rate > rate_limit:
                         time.sleep(
-                                (downloaded / rate_limit / 1024) - elapsed_time
-                                )
+                            (downloaded / rate_limit / 1024) - elapsed_time
+                        )
                     start_time = time.time()
 
                 # Update the progress bar
-                progress_bar = "\rDownloaded: {:.2f} MB of {:.2f}".format(
+                progress_bar = "\rDownloaded: {:.2f} MB of {} MB".format(
                     downloaded / (1024 * 1024),
-                    int(length)
+                    int(length) // 1024 // 1024
                 )
                 sys.stdout.write(progress_bar)
                 sys.stdout.flush()
@@ -159,10 +180,10 @@ def download_file(url, length, filename, rate_limit=2048):
 
 def iter_episodes(jcontent: Dict):
     ''' Download using json file contents '''
-    for item in jcontent["collections"]["episodes"]["content"]:
-        show_name = item["program"]["title"]
-        air_date = item["air_date"][0:10]
-        ep_title = mapchars(item["title"])
+    for item_jcontent in jcontent["collections"]["episodes"]["content"]:
+        show_name = item_jcontent["program"]["title"]
+        air_date = item_jcontent["air_date"][0:10]
+        ep_title = mapchars(item_jcontent["title"])
         ep_title = ep_title.replace("/", "+")  # Slash be gone
         print(ep_title)
 
@@ -175,12 +196,12 @@ def iter_episodes(jcontent: Dict):
         with open(out_title.with_suffix(".json"), "w") as _fd:
             json.dump(jcontent, _fd)
         try:
-            mp4 = item["mp4"]  # Video file URL
+            mp4 = item_jcontent["mp4"]  # Video file URL
             # RESPONSE TESTING FOR CONTENTLENGTH
             req = urllib.request.Request(mp4)
             with urllib.request.urlopen(req) as response:
                 content_length = response.headers["Content-Length"]
-            #break
+            # break
             # END RESPONSE TESTING
         except FileNotFoundError:
             print("No valid mp4!")
@@ -201,8 +222,8 @@ def iter_episodes(jcontent: Dict):
                 raise continuity.FfmpegError from exc
 
         # Captions/Subtitles Check
-        sub_check_obj = sub_check(item["closedCaptions"])
-        sub_download(sub_check_obj, out_title)
+        sub_obj = Subtitle(item_jcontent["closedCaptions"])
+        sub_obj.sub_download(out_title)
 
 
 def main(show):
@@ -221,7 +242,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "show",
-        default="daniel-tigers-neighborhood",
+        default="jelly-ben-pogo",
         nargs="?",
         help="show name. default daniel-tigers-neighborhood",
     )

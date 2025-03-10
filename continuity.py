@@ -23,7 +23,8 @@ def is_ok(work_path: Path) -> bool:
             input_file,
             '-vn', '-c', 'copy',
             '-f', 'null', 'pipe:']
-
+    
+    print('Checking file integrity')
     with subprocess.Popen(proc,
                           shell=False,
                           stderr=subprocess.PIPE,
