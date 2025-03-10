@@ -132,7 +132,6 @@ class Subtitle:
                 # Convert webvtt to srt, because
                 # Kodi 19 will crash on presence of a webvtt file
                 self.any2srt(out_title)
-                # TODO remove all webvtt!
                 out_title.with_suffix(f".{self.cc_ext}").unlink()
 
         except Exception:
@@ -143,7 +142,7 @@ class Subtitle:
 def download_file(url, length, filename, rate_limit=2048):
     """rate_limit in kilobytes"""
     if length is None:
-        length == 0
+        length = 0
     start_time = time.time()
     rate_limit = rate_limit * 1024
     req = urllib.request.Request(url)
