@@ -44,7 +44,6 @@ def mapchars(_x: str) -> str:
 class Subtitle:
     """ Contains cc_ url, ext, and type variables
         for handling subs"""
-
     def __init__(self, cc_avail):
         """ Examines a list of caption dictionaries,
         and assigns to the instance variables:
@@ -113,7 +112,7 @@ class Subtitle:
         https://pycaption.readthedocs.io/en/stable/introduction.html """
 
         caps = ""
-        with open(out_title.with_suffix(f".{self.cc_ext}"),
+        with open(out_title.with_suffix(f".{self.cc_ext}"), 
                   encoding="utf-8") as _fd:
             caps = _fd.read()
 
@@ -195,7 +194,8 @@ def iter_episodes(jcontent: Dict):
         out_mp4: Path = out_title.with_suffix(".mp4")
 
         # Save .json
-        with open(out_title.with_suffix(".json")) as _fd:
+        with open(out_title.with_suffix(".json"), "w",
+                  encoding="utf-8") as _fd:
             json.dump(jcontent, _fd)
         try:
             mp4 = item_jcontent["mp4"]  # Video file URL
