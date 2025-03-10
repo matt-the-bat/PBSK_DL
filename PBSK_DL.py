@@ -76,7 +76,8 @@ def sub_check(
 
     if cap:
         suffix: str = cc_exts.get(cap["format"], "")
-
+    else:
+        suffix == ''
     return (cc_url, suffix, cc_type)
 
 
