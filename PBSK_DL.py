@@ -264,6 +264,6 @@ if __name__ == "__main__":
 
     if not args.show:
         print('Pick one of these shows:')
-        find_shows.run()
+        print(find_shows.titles)
     else:
         main(args.show)

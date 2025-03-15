@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Query website to find shows, via webscrape.
+"""
+import urllib
+from bs4 import BeautifulSoup
 
-Shows on Tue Mar 11th 2025:
-    
-almas-way
+titles = """almas-way
 arthur
 brambletown
 carl-the-collector
@@ -60,10 +62,7 @@ word-world
 wordgirl
 work-it-out-wombats
 xavier-riddle-and-the-secret-museum
-
 """
-import urllib
-from bs4 import BeautifulSoup
 
 
 def run():
