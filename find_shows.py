@@ -3,7 +3,7 @@
 """
 Query website to find shows, via webscrape.
 """
-import urllib
+import urllib.request
 from bs4 import BeautifulSoup
 
 titles = """almas-way
